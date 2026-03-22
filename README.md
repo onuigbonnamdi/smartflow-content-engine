@@ -1,34 +1,32 @@
 # SmartFlow Content Engine
 
-An n8n workflow that turns Telegram commands into AI-generated LinkedIn content.
+An n8n automation that turns Telegram commands into AI-generated LinkedIn posts.
 
-## What it does
+## How it works
 
-- Accepts Telegram commands like:
-  - `viral: topic`
-  - `authority: topic`
-  - `dm: topic`
-- Pulls recent web context with Tavily
-- Generates styled post drafts
-- Sends preview back to Telegram
-- Supports:
-  - `redo`
-  - `approve`
-  - `skip`
-- On approval:
-  - generates a relevant image
-  - merges image + text
-  - posts to LinkedIn
+1. Send a command via Telegram:
+   - viral: topic
+   - authority: topic
+   - dm: topic
 
-## Files
+2. The system:
+   - pulls live context from the web
+   - generates a structured LinkedIn post
+   - sends a preview back to Telegram
 
-- `smartflow-content-engine.json` — exported n8n workflow
+3. You decide:
+   - approve → generates image + posts to LinkedIn
+   - redo → regenerates the text
+   - skip → cancels
+
+## Demo
+
+See attached:
+- Workflow screenshot
+- Demo video
 
 ## Notes
 
-Before using:
-- connect Telegram
-- connect OpenAI
-- connect LinkedIn
-- connect Tavily API
-- import into n8n
+- Built with n8n
+- Uses OpenAI + Tavily
+- Fully automated approval flow via Telegram
