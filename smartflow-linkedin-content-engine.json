@@ -1,0 +1,1208 @@
+{
+  "name": "SmartFlow LinkedIn Content Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst data = $('Prepare Infographic Data1').first().json;\n\n// Extract base64 image from OpenAI response\nconst b64 = response.data[0].b64_json;\nconst binary = Buffer.from(b64, 'base64');\n\nreturn [{\n  json: {\n    filename: data.filename,\n    niche: data.niche,\n    automationType: data.automationType,\n    caption: data.caption,\n    timestamp: data.timestamp,\n    remaining: data.remaining\n  },\n  binary: {\n    data: {\n      data: binary,\n      mimeType: 'image/png',\n      fileName: data.filename\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        816
+      ],
+      "id": "12560f09-154f-4841-b597-3dcb82aac179",
+      "name": "Extract Image Binary"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "={{$json.caption.substring(0, 1024)}}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        816
+      ],
+      "id": "8768bbb6-b8ad-4a9c-85da-f0942dcda5b1",
+      "name": "Telegram: Send Infographic",
+      "webhookId": "0e82ea11-7330-4998-a09c-f3e6484cca65",
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "SmartFlowLab Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "8209cf6c-7fdf-4491-8661-db722a408413",
+      "name": "Daily Trigger (9AM)1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -512,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "SmartFlow_Content_Matrix",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 547868194,
+          "mode": "list",
+          "cachedResultName": "Industries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=547868194"
+        },
+        "options": {}
+      },
+      "id": "660ed07b-b09a-4269-ab44-74f08ecf7320",
+      "name": "Get Industries List1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        -304,
+        656
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "SmartFlow_Content_Matrix",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 735343276,
+          "mode": "list",
+          "cachedResultName": "Automation Types",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=735343276"
+        },
+        "options": {}
+      },
+      "id": "37d53014-ca3c-4d8b-8e28-cac8c362bcc3",
+      "name": "Get Automation Types1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        -304,
+        848
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "SmartFlow_Content_Matrix",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 156545615,
+          "mode": "list",
+          "cachedResultName": "Post Grid (Tracker)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=156545615"
+        },
+        "options": {}
+      },
+      "id": "be41a134-70ed-4bdb-afde-d3289e2fb1c8",
+      "name": "Get Post Tracker1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        -304,
+        1024
+      ],
+      "retryOnFail": false,
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const industries = $('Get Industries List1').all().map(i => ({\n  sector: i.json['Sector'],\n  niche: i.json['Industry / Niche']\n})).filter(i => i.niche);\n\nconst automations = $('Get Automation Types1').all().map(a => ({\n  type: a.json['Automation Type'],\n  desc: a.json['What It Does']\n})).filter(a => a.type);\n\nconst posted = $('Get Post Tracker1').all().map(p => ({\n  niche: p.json['Industry / Niche'],\n  automation: p.json['Automation Type']\n})).filter(p => p.niche && p.automation);\n\nconst usedCombos = new Set(posted.map(p => `${p.niche}|||${p.automation}`));\n\nlet attempts = 0, selectedIndustry = null, selectedAutomation = null, combo = '';\nwhile (attempts < 500) {\n  const ri = industries[Math.floor(Math.random() * industries.length)];\n  const ra = automations[Math.floor(Math.random() * automations.length)];\n  combo = `${ri.niche}|||${ra.type}`;\n  if (!usedCombos.has(combo)) { selectedIndustry = ri; selectedAutomation = ra; break; }\n  attempts++;\n}\nif (!selectedIndustry) throw new Error('All combinations exhausted after 500 attempts.');\n\nconst promptText = `You are a senior AI automation consultant writing a LinkedIn post on behalf of SmartFlow Lab — a UK-based AI automation studio.\\n\\nWrite a LinkedIn post about how ${selectedAutomation.type} can transform a ${selectedIndustry.niche} business.\\n\\nRules:\\n- 150-200 words maximum\\n- Write like a human practitioner, not a marketer\\n- Open with a specific pain point this business type faces (not a generic opener)\\n- Explain briefly how automation solves it (1-2 sentences, no technical jargon)\\n- Include one realistic outcome or result (e.g. '3 hours saved per day', '40% fewer no-shows')\\n- End with a soft CTA\\n- Do NOT use hashtags\\n- Do NOT mention SmartFlow Lab by name in the post body\\n- Do NOT use em dashes\\n- Do NOT start with 'I'\\n\\nIndustry: ${selectedIndustry.niche}\\nSector: ${selectedIndustry.sector}\\nAutomation type: ${selectedAutomation.type}\\nWhat it does: ${selectedAutomation.desc}`;\n\nreturn [{ json: {\n  sector: selectedIndustry.sector,\n  niche: selectedIndustry.niche,\n  automationType: selectedAutomation.type,\n  automationDesc: selectedAutomation.desc,\n  combo,\n  promptText: promptText.replace(/[\\n\\r]/g, ' ').replace(/\"/g, '\\\\\"'),\n  totalIndustries: industries.length,\n  totalAutomations: automations.length,\n  totalUsed: posted.length,\n  remaining: (industries.length * automations.length) - posted.length - 1\n} }];"
+      },
+      "id": "00ce1595-7963-49ea-bea0-6294c9a2ff00",
+      "name": "Random Pick (No Duplicates)1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-5\",\n  \"max_tokens\": 400,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify($json.promptText) }}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "22a2d226-768b-4fb4-ac74-04fb400434bd",
+      "name": "Generate Caption (Claude)1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        176,
+        816
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Random Pick (No Duplicates)1').first().json;\nconst caption = $('Generate Caption (Claude)1').first().json.content[0].text.trim();\n\nconst automationSteps = {\n  'Lead Engine': ['Identify & enrich target businesses', 'AI scores leads by fit & intent', 'Personalised outreach sent automatically'],\n  'WhatsApp Automation': ['Inbound message received 24/7', 'AI classifies intent instantly', 'Replies, books, or routes to human'],\n  'Appointment Booking': ['Client requests via any channel', 'System checks availability & books', 'Confirmation + reminders sent auto'],\n  'Follow-up Sequences': ['Trigger fires after enquiry or quote', 'Multi-touch sequence runs over days', 'Hot leads flagged for human follow-up'],\n  'Invoice & Payment Chase': ['Invoice sent on job completion', 'Auto reminders at 3, 7, 14 days', 'Payment confirmed and logged'],\n  'Onboarding Automation': ['Client signs up or pays', 'Welcome sequence fires instantly', 'Documents collected, tasks assigned'],\n  'Review & Reputation': ['Service marked complete in CRM', 'Review request sent at right moment', 'Negative feedback flagged privately'],\n  'CRM Data Enrichment': ['New contact added to CRM', 'AI pulls public data to enrich record', 'Full profile ready before first call'],\n  'Content Automation': ['Topic picked from content matrix', 'AI researches and writes post', 'Infographic generated and published'],\n  'CV & Hiring Pipeline': ['CV received via email or form', 'AI scores against job criteria', 'Top candidates notified, rest thanked'],\n  'Event & Webinar Engine': ['Registration captured on landing page', 'Reminder sequence fires automatically', 'Post-event follow-up routes hot leads'],\n  'Reporting & Dashboards': ['Data pulled from all sources nightly', 'AI summarises key metrics and trends', 'Report delivered to inbox by 8AM'],\n  'Internal Ops Automation': ['Request or trigger received', 'Task assigned, approval routed', 'Notification sent, outcome logged'],\n  'E-commerce Automation': ['Customer action triggers workflow', 'Personalised message sent instantly', 'Purchase, review, or return handled'],\n  'Referral Engine': ['Satisfied client identified in CRM', 'Referral ask sent at peak satisfaction', 'Referral tracked and reward triggered'],\n  'Research Automation': ['Keywords and sources configured once', 'AI monitors news and competitors daily', 'Summary delivered to inbox or Slack'],\n  'Proposal & Quote Engine': ['Enquiry form or CRM trigger fires', 'AI generates personalised proposal', 'PDF sent to prospect within minutes']\n};\n\nconst steps = automationSteps[data.automationType] || ['Trigger fires automatically', 'AI processes and acts', 'Outcome logged and notified'];\nconst filename = 'post_' + Date.now() + '.png';\n\nreturn [{ json: {\n  sector: data.sector,\n  niche: data.niche,\n  automationType: data.automationType,\n  automationDesc: data.automationDesc,\n  combo: data.combo,\n  remaining: data.remaining,\n  totalIndustries: data.totalIndustries,\n  totalAutomations: data.totalAutomations,\n  totalUsed: data.totalUsed,\n  caption: caption,\n  steps: steps,\n  timestamp: new Date().toISOString(),\n  filename: filename\n} }];"
+      },
+      "id": "430f289a-9ebb-466b-963b-033d185fdd56",
+      "name": "Prepare Infographic Data1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an infographic copywriter for SmartFlow Lab Ltd, a B2B AI automation agency.\n\nTransform the following caption into a structured infographic brief. Be concise, punchy, and specific to the niche.\n\nReturn ONLY this exact structure, no extra text:\n\nHEADLINE: [punchy 6-9 word hook]\nSUBHEADLINE: [one supporting line, max 10 words]\nPROBLEM_1: [pain point, max 5 words]\nPROBLEM_2: [pain point, max 5 words]\nPROBLEM_3: [pain point, max 5 words]\nSTEP_1: [automation action, max 6 words]\nSTEP_2: [automation action, max 6 words]\nSTEP_3: [automation action, max 6 words]\nSTAT: [key measurable result or benefit, max 8 words]\nCTA: [conversational question, max 10 words]\n\nCaption:\n{{ $('Prepare Infographic Data1').item.json.caption }}\n\nThe infographic must be specifically about: {{ $('Prepare Infographic Data1').item.json.automationType }} for {{ $('Prepare Infographic Data1').item.json.niche }} businesses. Do not create generic content."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        576,
+        816
+      ],
+      "id": "e109321f-be41-4279-b5f5-7423a2a5b197",
+      "name": "Message a model1",
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-image-1\",\n  \"size\": \"1024x1536\",\n  \"quality\": \"high\",\n  \"output_format\": \"png\",\n  \"prompt\": {{ JSON.stringify(\"Create a HIGH-END LinkedIn infographic poster in portrait format (1080x1350px).\\n\\nUSE THIS STRUCTURED BRIEF EXACTLY:\\n\" + $('Message a model1').item.json.text + \"\\n\\nLAYOUT SECTIONS IN ORDER:\\n1. HEADLINE + SUBHEADLINE on deep navy block, bold white text, max 20% of canvas\\n2. PROBLEM cards: 3 clean white rounded cards with orange warning icons, short labels only\\n3. SOLUTION steps: 3 cards in left-to-right flow with green icons and arrows between them\\n4. STAT: large bold number or benefit on dark navy block, high contrast\\n5. CTA: short conversational question on light background\\n6. FOOTER dark strip: SmartFlow Lab Ltd · smartflowlab.dev\\n\\nDESIGN: Rounded cards, soft shadows, generous whitespace, all content inside canvas, no cut-off text, no content touching edges\\nCOLOURS: Navy #0B1F3A, Green #16A34A, Off-White #F8FAFC background, Charcoal #1E293B body, Orange #F97316 pain points only\\nTYPOGRAPHY: Bold modern sans-serif headlines, clean readable body text, large numbers for stats\\nRULES: No paragraphs, no wall of text, no fake statistics, no content outside canvas margins, footer must be fully visible\") }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        864,
+        816
+      ],
+      "id": "130c8fa8-50a4-4d99-89ff-2367e3d536cf",
+      "name": "Generate Infographic2",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "SmartFlow_Content_Matrix",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 156545615,
+          "mode": "list",
+          "cachedResultName": "Post Grid (Tracker)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=156545615"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date Posted": "=={{$('Prepare Infographic Data1').first().json.timestamp}}",
+            "Sector": "=={{$('Prepare Infographic Data1').first().json.sector}}",
+            "Industry / Niche": "=={{$('Prepare Infographic Data1').first().json.niche}}",
+            "Automation Type": "=={{$('Prepare Infographic Data1').first().json.automationType}}",
+            "Caption Draft": "=={{$('Prepare Infographic Data1').first().json.caption}}",
+            "Infographic File": "=={{$('Prepare Infographic Data1').first().json.filename}}",
+            "LinkedIn Post ID": "=={{$('LinkedIn: Create Post1').first().json.id}}",
+            "Status": "Posted"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Post #",
+              "displayName": "Post #",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Posted",
+              "displayName": "Date Posted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sector",
+              "displayName": "Sector",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Industry / Niche",
+              "displayName": "Industry / Niche",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Automation Type",
+              "displayName": "Automation Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caption Draft",
+              "displayName": "Caption Draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Infographic File",
+              "displayName": "Infographic File",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn Post ID",
+              "displayName": "LinkedIn Post ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "683f0dd6-43dc-4fb2-9ef0-58dd1edb54b3",
+      "name": "Log to Post Tracker1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        1536,
+        816
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_CHAT_ID}}",
+        "text": "=✅ *Posted to SmartFlow LinkedIn*\n\n🏭 *Industry:* {{ $('Prepare Infographic Data1').first().json.niche }}\n⚙️ *Automation:* {{ $('Prepare Infographic Data1').first().json.automationType }}\n\n📝 *Caption preview:*\n{{ $('Prepare Infographic Data1').first().json.caption.substring(0, 300) }}...\n\n🔗 *LinkedIn Post ID:* {{ $('LinkedIn: Create Post1').first().json.id }}\n📊 *Combos remaining:* {{ $('Prepare Infographic Data1').first().json.remaining }}\n\n_Reply_ `redo [Post ID]` _to regenerate and repost._",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "cec82ad6-31cb-4721-a4db-b8c33d1331a7",
+      "name": "Telegram: Notify You1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1776,
+        816
+      ],
+      "webhookId": "7ff7f857-dbc9-431a-97ef-a4b6486777f0",
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "SmartFlowLab Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/assets?action=registerUpload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"registerUploadRequest\":{\"recipes\":[\"urn:li:digitalmediaRecipe:feedshare-image\"],\"owner\":\"urn:li:organization:YOUR_ORG_ID\",\"serviceRelationships\":[{\"relationshipType\":\"OWNER\",\"identifier\":\"urn:li:userGeneratedContent\"}]}}",
+        "options": {}
+      },
+      "id": "801ba673-b1df-4629-81b1-7d3b8fb54988",
+      "name": "LinkedIn: Register Image Upload1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        848,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{$json.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "e046e3f9-bcea-442a-a79c-6330dc2aa709",
+      "name": "LinkedIn: Upload Image Binary1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1408,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/ugcPosts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"author\": \"urn:li:organization:YOUR_ORG_ID\",\n  \"lifecycleState\": \"PUBLISHED\",\n  \"specificContent\": {\n    \"com.linkedin.ugc.ShareContent\": {\n      \"shareCommentary\": {\n        \"text\": {{ JSON.stringify($('Prepare Infographic Data1').first().json.caption) }}\n      },\n      \"shareMediaCategory\": \"IMAGE\",\n      \"media\": [\n        {\n          \"status\": \"READY\",\n          \"description\": {\n            \"text\": \"SmartFlow automation infographic\"\n          },\n          \"media\": \"{{ $('LinkedIn: Register Image Upload1').first().json.value.asset }}\",\n          \"title\": {\n            \"text\": {{ JSON.stringify($('Prepare Infographic Data1').first().json.automationType + ' for ' + $('Prepare Infographic Data1').first().json.niche) }}\n          }\n        }\n      ]\n    }\n  },\n  \"visibility\": {\n    \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"\n  }\n}",
+        "options": {}
+      },
+      "id": "1ec75dd0-04bb-4ef3-8ffd-c1d542c0c680",
+      "name": "LinkedIn: Create Post1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1696,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const registerData = $input.first();\nconst binaryData = $('Extract Image Binary').first().binary;\n\nreturn [{\n  json: registerData.json,\n  binary: binaryData\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        304
+      ],
+      "id": "dd8908ec-831e-412b-a3e3-6f70f11c0be8",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "6250c40e-37b6-4a34-a929-d84531a0f9ff",
+      "name": "Telegram: Redo Trigger1",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -544,
+        1184
+      ],
+      "webhookId": "smartflow-redo-webhook",
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "SmartFlowLab Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = $input.first().json.message?.text || '';\nif (!msg.toLowerCase().startsWith('redo ')) return [{ json: { isRedo: false, skip: true } }];\nconst postId = msg.replace(/^redo /i, '').trim();\nif (!postId) return [{ json: { isRedo: false, skip: true, error: 'No post ID provided' } }];\nreturn [{ json: { isRedo: true, skip: false, targetPostId: postId } }];"
+      },
+      "id": "8751b390-d052-4559-885e-1a0991a877a1",
+      "name": "Parse Redo Command1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.skip}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ad57d87d-ed5a-450d-9867-77c085ec6d5c",
+      "name": "Is Valid Redo?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "SmartFlow_Content_Matrix",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 156545615,
+          "mode": "list",
+          "cachedResultName": "Post Grid (Tracker)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=156545615"
+        },
+        "options": {}
+      },
+      "id": "c922066d-b1e5-4a24-a19d-8316c9d6b82c",
+      "name": "Find Original Post in Tracker1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        1200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const targetId = $('Parse Redo Command1').first().json.targetPostId;\nconst rows = $input.all();\nconst match = rows.find(r => r.json['LinkedIn Post ID'] === targetId);\nif (!match) throw new Error(`Post ID not found in tracker: ${targetId}`);\n\nconst automationSteps = {\n  'Lead Engine': ['Identify & enrich target businesses', 'AI scores leads by fit & intent', 'Personalised outreach sent automatically'],\n  'WhatsApp Automation': ['Inbound message received 24/7', 'AI classifies intent instantly', 'Replies, books, or routes to human'],\n  'Appointment Booking': ['Client requests via any channel', 'System checks availability & books', 'Confirmation + reminders sent auto'],\n  'Follow-up Sequences': ['Trigger fires after enquiry or quote', 'Multi-touch sequence runs over days', 'Hot leads flagged for human follow-up'],\n  'Invoice & Payment Chase': ['Invoice sent on job completion', 'Auto reminders at 3, 7, 14 days', 'Payment confirmed and logged'],\n  'Onboarding Automation': ['Client signs up or pays', 'Welcome sequence fires instantly', 'Documents collected, tasks assigned'],\n  'Review & Reputation': ['Service marked complete in CRM', 'Review request sent at right moment', 'Negative feedback flagged privately'],\n  'CRM Data Enrichment': ['New contact added to CRM', 'AI pulls public data to enrich record', 'Full profile ready before first call'],\n  'Content Automation': ['Topic picked from content matrix', 'AI researches and writes post', 'Infographic generated and published'],\n  'CV & Hiring Pipeline': ['CV received via email or form', 'AI scores against job criteria', 'Top candidates notified, rest thanked'],\n  'Event & Webinar Engine': ['Registration captured on landing page', 'Reminder sequence fires automatically', 'Post-event follow-up routes hot leads'],\n  'Reporting & Dashboards': ['Data pulled from all sources nightly', 'AI summarises key metrics and trends', 'Report delivered to inbox by 8AM'],\n  'Internal Ops Automation': ['Request or trigger received', 'Task assigned, approval routed', 'Notification sent, outcome logged'],\n  'E-commerce Automation': ['Customer action triggers workflow', 'Personalised message sent instantly', 'Purchase, review, or return handled'],\n  'Referral Engine': ['Satisfied client identified in CRM', 'Referral ask sent at peak satisfaction', 'Referral tracked and reward triggered'],\n  'Research Automation': ['Keywords and sources configured once', 'AI monitors news and competitors daily', 'Summary delivered to inbox or Slack'],\n  'Proposal & Quote Engine': ['Enquiry form or CRM trigger fires', 'AI generates personalised proposal', 'PDF sent to prospect within minutes']\n};\n\nconst automationType = match.json['Automation Type'];\nconst niche = match.json['Industry / Niche'];\nconst steps = automationSteps[automationType] || ['Step 1', 'Step 2', 'Step 3'];\n\nconst redoPrompt = `You are a senior AI automation consultant writing a LinkedIn post on behalf of SmartFlow Lab.\\n\\nWrite a FRESH LinkedIn post about how ${automationType} can transform a ${niche} business. This is a regeneration — write it differently.\\n\\nRules:\\n- 150-200 words maximum\\n- Write like a human practitioner, not a marketer\\n- Open with a specific pain point (different angle from usual)\\n- Explain how automation solves it (1-2 sentences, no jargon)\\n- Include one realistic outcome\\n- End with a soft CTA\\n- No hashtags, no em dashes, do not start with 'I'\\n\\nIndustry: ${niche}\\nAutomation type: ${automationType}`;\n\nreturn [{ json: {\n  sector: match.json['Sector'],\n  niche,\n  automationType,\n  steps,\n  promptText: redoPrompt,\n  isRedo: true,\n  redoPostId: targetId,\n  filename: `redo_${Date.now()}.png`,\n  timestamp: new Date().toISOString()\n} }];"
+      },
+      "id": "bd87bbd3-e9fe-4cf1-a96d-58216b2f4912",
+      "name": "Extract Original Combo1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-5\",\n  \"max_tokens\": 400,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.promptText }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "8f2574c3-5b22-42f8-95d3-71e69297f533",
+      "name": "Regenerate Caption (Claude)1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        688,
+        1184
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Extract Original Combo1').first().json;\nconst caption = $input.first().json.content[0].text.trim();\nreturn [{ json: { ...data, caption } }];"
+      },
+      "id": "f2d2bf56-298d-48b8-a297-e0e72cb222b8",
+      "name": "Merge Redo Data1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-image-1\",\n  \"size\": \"1024x1536\",\n  \"quality\": \"high\",\n  \"output_format\": \"png\",\n  \"prompt\": {{ JSON.stringify(\"Create a HIGH-END LinkedIn infographic poster in portrait format (1080x1350px) for this content:\\n\\n\" + $json.caption + \"\\n\\nDesign as a visual infographic with bold headline, problem cards, solution steps, stat callout, and dark CTA footer. All content inside canvas. Footer must show: SmartFlow Lab Ltd · smartflowlab.dev\") }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1168,
+        1184
+      ],
+      "id": "5fa4e20c-2000-4c74-b859-7bd952a0d02c",
+      "name": "Generate Infographic3",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "SmartFlow_Content_Matrix",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 156545615,
+          "mode": "list",
+          "cachedResultName": "Post Grid (Tracker)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=156545615"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date Posted": "=={{$('Extract Original Combo1').first().json.timestamp}}",
+            "Sector": "=={{$('Extract Original Combo1').first().json.sector}}",
+            "Industry / Niche": "=={{$('Extract Original Combo1').first().json.niche}}",
+            "Automation Type": "=={{$('Extract Original Combo1').first().json.automationType}}",
+            "Caption Draft": "=={{$('Merge Redo Data1').first().json.caption}}",
+            "Infographic File": "=={{$('Extract Original Combo1').first().json.filename}}",
+            "LinkedIn Post ID": "=={{$('Extract Original Combo1').first().json.redoPostId}}",
+            "Status": "Redone - Delete Original",
+            "row_number": 0
+          },
+          "matchingColumns": [
+            "LinkedIn Post ID"
+          ],
+          "schema": [
+            {
+              "id": "Post #",
+              "displayName": "Post #",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Posted",
+              "displayName": "Date Posted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sector",
+              "displayName": "Sector",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Industry / Niche",
+              "displayName": "Industry / Niche",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Automation Type",
+              "displayName": "Automation Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caption Draft",
+              "displayName": "Caption Draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Infographic File",
+              "displayName": "Infographic File",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn Post ID",
+              "displayName": "LinkedIn Post ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "d4b047f8-c683-4d85-bc8c-0ca63d9dfa53",
+      "name": "Mark Old Post as Redone1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        1424,
+        1184
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_CHAT_ID}}",
+        "text": "=♻️ *Redo complete — new post published*\n\n🏭 *Industry:* {{ $('Extract Original Combo1').first().json.niche }}\n⚙️ *Automation:* {{ $('Extract Original Combo1').first().json.automationType }}\n\n📝 *New caption preview:*\n{{ $('Merge Redo Data1').first().json.caption.substring(0, 300) }}...\n\n🗑 *Action needed:* Manually delete the old post from LinkedIn.\n*Old Post ID:* {{ $('Extract Original Combo1').first().json.redoPostId }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "d03074da-8d62-43b4-bf9d-ca8cd3f31abb",
+      "name": "Telegram: Redo Confirmation1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1648,
+        1184
+      ],
+      "webhookId": "5f2c9c29-e5dd-4160-9f11-442783115e9a",
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "SmartFlowLab Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## I'm a note \nSMARTFLOW LINKEDIN CONTENT ENGINE\n==================================\n\n✅ DONE & WORKING\n- Daily Trigger (9AM)\n- Get Industries / Automation Types / Post Tracker (Google Sheets)\n- Random Pick No Duplicates (dedup logic)\n- Generate Caption (Claude) — HTTP Request\n- Prepare Infographic Data (Code node)\n- Message a model (Claude Sonnet — structured brief)\n- Generate Infographic2 (GPT-Image-1 — HTTP Request, 1024x1536)\n- Extract Image Binary (b64 → binary)\n- Telegram: Send Infographic (delivers PNG to chat)\n- Telegram: Notify You (post confirmation + redo instructions)\n- Redo path (Telegram trigger → regenerate → repost)\n\n⚠️ PENDING — LinkedIn API (community waitlist)\n- LinkedIn: Register Image Upload\n- Code in JavaScript (binary merge)\n- LinkedIn: Upload Image Binary\n- LinkedIn: Create Post\n→ Connect to Extract Image Binary when API approved\n\n📋 LOG BEHAVIOUR\n- Currently: logs after Telegram delivery (manual post phase)\n- Later: move Log to Post Tracker after LinkedIn: Create Post\n\n🔧 KNOWN ISSUES / TO CHECK\n- All node refs use \"1\" suffix (imported duplicate) — intentional\n- Telegram Chat ID hardcoded: YOUR_TELEGRAM_CHAT_ID (env var access denied)\n- Image size: confirm 1024x1536 resolving in Generate Infographic2\n- Redo path: Generate Infographic3 needs same HTTP Request upgrade\n\n🚫 NOT CONNECTED (intentional)\n- LinkedIn nodes floating — do not delete",
+        "height": 944,
+        "width": 592
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2032,
+        176
+      ],
+      "id": "e2927b78-e7d8-413b-a921-666d4329f92d",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "Extract Image Binary": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Send Infographic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram: Send Infographic": {
+      "main": [
+        [
+          {
+            "node": "Log to Post Tracker1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Trigger (9AM)1": {
+      "main": [
+        [
+          {
+            "node": "Get Industries List1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Industries List1": {
+      "main": [
+        [
+          {
+            "node": "Get Automation Types1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Automation Types1": {
+      "main": [
+        [
+          {
+            "node": "Get Post Tracker1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Post Tracker1": {
+      "main": [
+        [
+          {
+            "node": "Random Pick (No Duplicates)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Random Pick (No Duplicates)1": {
+      "main": [
+        [
+          {
+            "node": "Generate Caption (Claude)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Caption (Claude)1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Infographic Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Infographic Data1": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Generate Infographic2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Infographic2": {
+      "main": [
+        [
+          {
+            "node": "Extract Image Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Post Tracker1": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Notify You1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn: Register Image Upload1": {
+      "main": [
+        []
+      ]
+    },
+    "LinkedIn: Upload Image Binary1": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        []
+      ]
+    },
+    "Telegram: Redo Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Parse Redo Command1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Redo Command1": {
+      "main": [
+        [
+          {
+            "node": "Is Valid Redo?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid Redo?1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Find Original Post in Tracker1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Original Post in Tracker1": {
+      "main": [
+        [
+          {
+            "node": "Extract Original Combo1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Original Combo1": {
+      "main": [
+        [
+          {
+            "node": "Regenerate Caption (Claude)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Regenerate Caption (Claude)1": {
+      "main": [
+        [
+          {
+            "node": "Merge Redo Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Redo Data1": {
+      "main": [
+        [
+          {
+            "node": "Generate Infographic3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Infographic3": {
+      "main": [
+        [
+          {
+            "node": "Mark Old Post as Redone1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Old Post as Redone1": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Redo Confirmation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "tags": []
+}
